@@ -21,6 +21,11 @@
             get { return _Elements.Count == 0 ? 0 : _Elements[0].Count; }
         }
 
+        public bool Has(int row, int col)
+        {
+            return row >= 0 && row < NumRows && col >= 0 && col < NumCols;
+        }
+
         public T? Get(int row, int col)
         {
             if (row < NumRows && col < NumCols)
