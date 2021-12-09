@@ -1,4 +1,6 @@
-﻿namespace Common
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Common
 {
     public struct Point
     {
@@ -9,6 +11,26 @@
         {
             X = x;
             Y = y;
+        }
+
+        public override bool Equals([NotNullWhen(true)] object? obj)
+        {
+            return obj is Point p && p.X == X && p.Y == Y;
+        }
+
+        public static bool operator==(Point lhs, Point rhs)
+        {
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator!=(Point lhs, Point rhs)
+        {
+            return !(lhs == rhs);
+        }
+
+        public override int GetHashCode()
+        {
+            return X ^ Y;
         }
 
         public override string ToString() => $"({X}, {Y})";

@@ -4,124 +4,76 @@ namespace _9
 {
     public class Program
     {
-        public static bool IsLowPoint(Grid<int> grid, int row, int col)
+        public static Grid<int> BuildGrid(List<string> lines)
         {
-            int lowest = int.MaxValue;
-            int lowestRow = -1;
-            int lowestCol = -1;
+            Grid<int> grid = new(-1);
 
-            for (int r = row - 1; r <= row + 1; r++)
+            int y = 0;
+            foreach (string line in lines)
             {
-                for (int c = col - 1; c <= col + 1; c++)
+                int x = 0;
+                foreach (char c in line)
                 {
-                    if (grid.Has(r, c) && grid.Get(r, c) < lowest)
-                    {
-                        lowest = grid.Get(r, c);
-                        lowestRow = r;
-                        lowestCol = c;
-                    }
+                    grid.Set(x, y, c - '0');
+                    ++x;
                 }
+                ++y;
             }
 
-            return lowestRow == row && lowestCol == col;
+            return grid;
         }
 
         public static List<Point> GetAdjacent(Grid<int> grid, Point point)
         {
-            List<Point> adjacent = new();
+            return (new Point[] { new Point(point.X - 1, point.Y), new Point(point.X + 1, point.Y), new Point(point.X, point.Y - 1), new Point(point.X, point.Y + 1) }).Where(adjacent => grid.Has(adjacent)).ToList();
+        }
 
-            for (int row = Math.Max(point.Y - 1, 0); row <= Math.Min(point.Y + 1, grid.NumRows - 1); ++row)
-            {
-                if (row != point.Y)
-                {
-                    adjacent.Add(new Point(point.X, row));
-                }
-            }
-
-            for (int col = Math.Max(point.X - 1, 0); col <= Math.Min(point.X + 1, grid.NumCols - 1); ++col)
-            {
-                if (col != point.X)
-                {
-                    adjacent.Add(new Point(col, point.Y));
-                }
-            }
-
-            return adjacent;
+        public static bool IsLowPoint(Grid<int> grid, Point point)
+        {
+            return grid.Get(point) < GetAdjacent(grid, point).Select(p => grid.Get(p)).Min();
         }
 
         public static void Main(string[] args)
         {
             List<string> lines = File.ReadLines(@"../../../input.txt").ToList();
-
-            Grid<int> grid = new(-1);
-            {
-                int row = 0;
-                foreach (string line in lines)
-                {
-                    int col = 0;
-                    foreach (char c in line)
-                    {
-                        grid.Set(row, col, c - '0');
-                        ++col;
-                    }
-                    ++row;
-                }
-            }
+            Grid<int> grid = BuildGrid(lines);
 
             List<Point> lowPoints = new();
+            grid.ForEach((height, point) =>
             {
-                for (int row = 0; row < grid.NumRows; ++row)
+                if (IsLowPoint(grid, point))
                 {
-                    for (int col = 0; col < grid.NumCols; ++col)
-                    {
-                        if (IsLowPoint(grid, row, col))
-                        {
-                            lowPoints.Add(new Point(col, row));
-                        }
-                    }
+                    lowPoints.Add(point);
                 }
-            }
+            });
 
-            int totalRisk = 0;
-            foreach (Point point in lowPoints)
-            {
-                totalRisk += 1 + grid.Get(point.Y, point.X);
-            }
+            int totalRisk = lowPoints.Select(lowPoint => grid.Get(lowPoint)).Aggregate(0, (result, height) => result += height + 1);
+            Console.WriteLine(totalRisk);
 
             List<HashSet<Point>> basins = new();
             foreach (Point lowPoint in lowPoints)
             {
-                HashSet<Point> search = new();
-                search.Add(lowPoint);
+                HashSet<Point> basin = new();
 
-                int lastSize = 0;
-                while (search.Count != lastSize)
+                Queue<Point> queue = new();
+                queue.Enqueue(lowPoint);
+                while (queue.Count > 0)
                 {
-                    lastSize = search.Count;
-
-                    HashSet<Point> searchTemp = new HashSet<Point>(search);
-                    foreach (Point searchPoint in searchTemp)
+                    Point point = queue.Dequeue();
+                    foreach (Point newAdjacent in GetAdjacent(grid, point).Where(adjacent => grid.Get(adjacent) != 9 && !basin.Contains(adjacent)))
                     {
-                        List<Point> adjacent = GetAdjacent(grid, searchPoint);
-                        foreach (Point adj in adjacent)
-                        {
-                            if (grid.Get(adj.Y, adj.X) != 9)
-                            {
-                                search.Add(adj);
-                            }
-                        }    
+                        basin.Add(newAdjacent);
+                        queue.Enqueue(newAdjacent);
                     }
                 }
 
-                basins.Add(search);
+                basins.Add(basin);
             }
-
-            basins.Sort((first, second) => first.Count < second.Count ? 1 : first.Count == second.Count ? 0 : -1);
+            basins.Sort((first, second) => second.Count - first.Count);
 
             int multipliedSizes = basins[0].Count * basins[1].Count * basins[2].Count;
-            
-            Console.WriteLine(totalRisk);
             Console.WriteLine(multipliedSizes);
+
             Console.ReadLine();
         }
     }

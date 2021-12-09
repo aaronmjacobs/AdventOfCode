@@ -11,80 +11,124 @@
             _DefaultElement = defaultElement;
         }
 
-        public int NumRows
-        {
-            get { return _Elements.Count; }
-        }
-
-        public int NumCols
+        public int Width
         {
             get { return _Elements.Count == 0 ? 0 : _Elements[0].Count; }
         }
 
-        public bool Has(int row, int col)
+        public int Height
         {
-            return row >= 0 && row < NumRows && col >= 0 && col < NumCols;
+            get { return _Elements.Count; }
         }
 
-        public T? Get(int row, int col)
+        public bool Has(int x, int y)
         {
-            if (row < NumRows && col < NumCols)
+            return x >= 0 && x < Width && y >= 0 && y < Height;
+        }
+
+        public bool Has(Point point)
+        {
+            return Has(point.X, point.Y);
+        }
+
+        public T? Get(int x, int y)
+        {
+            if (Has(x, y))
             {
-                return _Elements[row][col];
+                return _Elements[y][x];
             }
 
             return _DefaultElement;
         }
 
-        public void Set(int row, int col, T element)
+        public T? Get(Point point)
         {
-            EnsureLargeEnough(row, col);
-            _Elements[row][col] = element;
+            return Get(point.X, point.Y);
         }
 
-        public void ForEach(Action<T? /* element */, int /* row */, int /* col */> function)
+        public void Set(int x, int y, T element)
         {
-            for (int row = 0; row < NumRows; ++row)
+            EnsureLargeEnough(x, y);
+            _Elements[y][x] = element;
+        }
+
+        public void Set(Point point, T element)
+        {
+            Set(point.X, point.Y, element);
+        }
+
+        public void ForEach(Action<T? /* element */, int /* x */, int /* y */> function)
+        {
+            for (int y = 0; y < Height; ++y)
             {
-                for (int col = 0; col < NumCols; ++col)
+                for (int x = 0; x < Width; ++x)
                 {
-                    function(_Elements[row][col], row, col);
+                    function(_Elements[y][x], x, y);
                 }
             }
         }
 
-        public Grid<T> Map(Func<T? /* element */, int /* row */, int /* col */, T /* result */> function)
+        public void ForEach(Action<T? /* element */, Point /* point */> function)
+        {
+            for (int y = 0; y < Height; ++y)
+            {
+                for (int x = 0; x < Width; ++x)
+                {
+                    function(_Elements[y][x], new Point(x, y));
+                }
+            }
+        }
+
+        public Grid<T> Map(Func<T? /* element */, int /* x */, int /* y */, T /* result */> function)
         {
             Grid<T> grid = new();
 
-            ForEach((element, row, col) => grid.Set(row, col, function(element, row, col)));
+            ForEach((element, x, y) => grid.Set(x, y, function(element, x, y)));
 
             return grid;
         }
 
-        public U? Reduce<U>(Func<U? /* previous */, T? /* element */, int /* row */, int /* col */, U? /* result */> function, U? initial = default)
+        public Grid<T> Map(Func<T? /* element */, Point /* point */, T /* result */> function)
+        {
+            Grid<T> grid = new();
+
+            ForEach((element, point) => grid.Set(point, function(element, point)));
+
+            return grid;
+        }
+
+        public U? Reduce<U>(Func<U? /* previous */, T? /* element */, int /* x */, int /* y */, U? /* result */> function, U? initial = default)
         {
             U? result = initial;
 
-            ForEach((element, row, col) => result = function(result, element, row, col));
+            ForEach((element, x, y) => result = function(result, element, x, y));
+
+            return result;
+        }
+
+        public U? Reduce<U>(Func<U? /* previous */, T? /* element */, Point /* point */, U? /* result */> function, U? initial = default)
+        {
+            U? result = initial;
+
+            ForEach((element, point) => result = function(result, element, point));
 
             return result;
         }
 
         public override string ToString()
         {
-            return string.Join('\n', _Elements.Select(elementRow => "[ " + string.Join(' ', elementRow) + " ]"));
+            return string.Join('\n', _Elements.Select(row => "[ " + string.Join(' ', row) + " ]"));
         }
 
-        private void EnsureLargeEnough(int row, int col)
+        private void EnsureLargeEnough(int x, int y)
         {
-            if (row >= NumRows)
+            if (y >= Height)
             {
-                int numNewRows = (row + 1) - NumRows;
+                int numNewRows = (y + 1) - Height;
                 List<T>[] newRows = new List<T>[numNewRows];
                 for (int i = 0; i < newRows.Length; i++)
                 {
-                    T[] newCols = new T[NumCols];
+                    T[] newCols = new T[Width];
                     Array.Fill(newCols, _DefaultElement);
                     newRows[i] = new List<T>(newCols);
                 }
@@ -92,14 +136,14 @@
                 _Elements.AddRange(newRows);
             }
 
-            if (col >= NumCols)
+            if (x >= Width)
             {
-                int numNewCols = (col + 1) - NumCols;
-                foreach (List<T> elementRow in _Elements)
+                int numNewCols = (x + 1) - Width;
+                foreach (List<T> row in _Elements)
                 {
                     T[] newCols = new T[numNewCols];
                     Array.Fill(newCols, _DefaultElement);
-                    elementRow.AddRange(newCols);
+                    row.AddRange(newCols);
                 }
             }
         }
