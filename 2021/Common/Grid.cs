@@ -79,6 +79,34 @@
             }
         }
 
+        public void ForEachAdjacent(int x, int y, Action<T? /* element */, int /* x */, int /* y */> function)
+        {
+            for (int yAdj = y - 1; yAdj <= y + 1; ++yAdj)
+            {
+                for (int xAdj = x - 1; xAdj <= x + 1; ++xAdj)
+                {
+                    if (!(yAdj == y && xAdj == x) && Has(xAdj, yAdj))
+                    {
+                        function(_Elements[yAdj][xAdj], xAdj, yAdj);
+                    }
+                }
+            }
+        }
+
+        public void ForEachAdjacent(Point point, Action<T? /* element */, Point /* point */> function)
+        {
+            for (int yAdj = point.Y - 1; yAdj <= point.Y + 1; ++yAdj)
+            {
+                for (int xAdj = point.X - 1; xAdj <= point.X + 1; ++xAdj)
+                {
+                    if (!(yAdj == point.Y && xAdj == point.X) && Has(xAdj, yAdj))
+                    {
+                        function(_Elements[yAdj][xAdj], new Point(xAdj, yAdj));
+                    }
+                }
+            }
+        }
+
         public Grid<T> Map(Func<T? /* element */, int /* x */, int /* y */, T /* result */> function)
         {
             Grid<T> grid = new();
