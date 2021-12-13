@@ -57,6 +57,26 @@
             Set(point.X, point.Y, element);
         }
 
+        public void Resize(int newWidth, int newHeight)
+        {
+            EnsureLargeEnough(newWidth - 1, newHeight - 1);
+
+            int currentHeight = Height;
+            if (newHeight < currentHeight)
+            {
+                _Elements.RemoveRange(newHeight, currentHeight - newHeight);
+            }
+
+            int currentWidth = Width;
+            if (newWidth < currentWidth)
+            {
+                for (int y = 0; y < Height; ++y)
+                {
+                    _Elements[y].RemoveRange(newWidth, currentWidth - newWidth);
+                }
+            }
+        }
+
         public void ForEach(Action<T? /* element */, int /* x */, int /* y */> function)
         {
             for (int y = 0; y < Height; ++y)
@@ -143,9 +163,21 @@
             return result;
         }
 
+        public string ToStringCustom<TResult>(char RowSeparator = '\n', char ColSeparator = ' ', Func<T, TResult>? ToStringFunction = null)
+        {
+            if (ToStringFunction == null)
+            {
+                return string.Join(RowSeparator, _Elements.Select(row => string.Join(ColSeparator, row)));
+            }
+            else
+            {
+                return string.Join(RowSeparator, _Elements.Select(row => string.Join(ColSeparator, row.Select(ToStringFunction))));
+            }
+        }
+
         public override string ToString()
         {
-            return string.Join('\n', _Elements.Select(row => "[ " + string.Join(' ', row) + " ]"));
+            return ToStringCustom<object>();
         }
 
         private void EnsureLargeEnough(int x, int y)
