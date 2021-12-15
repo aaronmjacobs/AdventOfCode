@@ -90,13 +90,7 @@
 
         public void ForEach(Action<T? /* element */, Point /* point */> function)
         {
-            for (int y = 0; y < Height; ++y)
-            {
-                for (int x = 0; x < Width; ++x)
-                {
-                    function(_Elements[y][x], new Point(x, y));
-                }
-            }
+            ForEach((element, x, y) => function(element, new Point(x, y)));
         }
 
         public void ForEachNeighbor(int x, int y, Action<T? /* element */, int /* x */, int /* y */> function)
@@ -115,16 +109,7 @@
 
         public void ForEachNeighbor(Point point, Action<T? /* element */, Point /* point */> function)
         {
-            for (int nY = point.Y - 1; nY <= point.Y + 1; ++nY)
-            {
-                for (int nX = point.X - 1; nX <= point.X + 1; ++nX)
-                {
-                    if (!(nY == point.Y && nX == point.X) && Has(nX, nY))
-                    {
-                        function(_Elements[nY][nX], new Point(nX, nY));
-                    }
-                }
-            }
+            ForEachNeighbor(point.X, point.Y, (element, x, y) => function(element, new Point(x, y)));
         }
 
         public void ForEachAdjacent(int x, int y, Action<T? /* element */, int /* x */, int /* y */> function)
@@ -149,22 +134,7 @@
 
         public void ForEachAdjacent(Point point, Action<T? /* element */, Point /* point */> function)
         {
-            if (Has(point.X - 1, point.Y))
-            {
-                function(_Elements[point.Y][point.X - 1], new Point(point.X - 1, point.Y));
-            }
-            if (Has(point.X + 1, point.Y))
-            {
-                function(_Elements[point.Y][point.X + 1], new Point(point.X + 1, point.Y));
-            }
-            if (Has(point.X, point.Y - 1))
-            {
-                function(_Elements[point.Y - 1][point.X], new Point(point.X, point.Y - 1));
-            }
-            if (Has(point.X, point.Y + 1))
-            {
-                function(_Elements[point.Y + 1][point.X], new Point(point.X, point.Y + 1));
-            }
+            ForEachAdjacent(point.X, point.Y, (element, x, y) => function(element, new Point(x, y)));
         }
 
         public Grid<T> Map(Func<T? /* element */, int /* x */, int /* y */, T /* result */> function)
@@ -178,11 +148,7 @@
 
         public Grid<T> Map(Func<T? /* element */, Point /* point */, T /* result */> function)
         {
-            Grid<T> grid = new();
-
-            ForEach((element, point) => grid.Set(point, function(element, point)));
-
-            return grid;
+            return Map((element, x, y) => function(element, new Point(x, y)));
         }
 
         public U? Reduce<U>(Func<U? /* previous */, T? /* element */, int /* x */, int /* y */, U? /* result */> function, U? initial = default)
@@ -196,11 +162,7 @@
 
         public U? Reduce<U>(Func<U? /* previous */, T? /* element */, Point /* point */, U? /* result */> function, U? initial = default)
         {
-            U? result = initial;
-
-            ForEach((element, point) => result = function(result, element, point));
-
-            return result;
+            return Reduce<U>((previous, element, x, y) => function(previous, element, new Point(x, y)));
         }
 
         public string ToStringCustom<TResult>(char RowSeparator = '\n', char ColSeparator = ' ', Func<T, TResult>? ToStringFunction = null)
