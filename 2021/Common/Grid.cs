@@ -99,31 +99,71 @@
             }
         }
 
-        public void ForEachAdjacent(int x, int y, Action<T? /* element */, int /* x */, int /* y */> function)
+        public void ForEachNeighbor(int x, int y, Action<T? /* element */, int /* x */, int /* y */> function)
         {
-            for (int yAdj = y - 1; yAdj <= y + 1; ++yAdj)
+            for (int nY = y - 1; nY <= y + 1; ++nY)
             {
-                for (int xAdj = x - 1; xAdj <= x + 1; ++xAdj)
+                for (int nX = x - 1; nX <= x + 1; ++nX)
                 {
-                    if (!(yAdj == y && xAdj == x) && Has(xAdj, yAdj))
+                    if (!(nY == y && nX == x) && Has(nX, nY))
                     {
-                        function(_Elements[yAdj][xAdj], xAdj, yAdj);
+                        function(_Elements[nY][nX], nX, nY);
                     }
                 }
             }
         }
 
-        public void ForEachAdjacent(Point point, Action<T? /* element */, Point /* point */> function)
+        public void ForEachNeighbor(Point point, Action<T? /* element */, Point /* point */> function)
         {
-            for (int yAdj = point.Y - 1; yAdj <= point.Y + 1; ++yAdj)
+            for (int nY = point.Y - 1; nY <= point.Y + 1; ++nY)
             {
-                for (int xAdj = point.X - 1; xAdj <= point.X + 1; ++xAdj)
+                for (int nX = point.X - 1; nX <= point.X + 1; ++nX)
                 {
-                    if (!(yAdj == point.Y && xAdj == point.X) && Has(xAdj, yAdj))
+                    if (!(nY == point.Y && nX == point.X) && Has(nX, nY))
                     {
-                        function(_Elements[yAdj][xAdj], new Point(xAdj, yAdj));
+                        function(_Elements[nY][nX], new Point(nX, nY));
                     }
                 }
+            }
+        }
+
+        public void ForEachAdjacent(int x, int y, Action<T? /* element */, int /* x */, int /* y */> function)
+        {
+            if (Has(x - 1, y))
+            {
+                function(_Elements[y][x - 1], x - 1, y);
+            }
+            if (Has(x + 1, y))
+            {
+                function(_Elements[y][x + 1], x + 1, y);
+            }
+            if (Has(x, y - 1))
+            {
+                function(_Elements[y - 1][x], x, y - 1);
+            }
+            if (Has(x, y + 1))
+            {
+                function(_Elements[y + 1][x], x, y + 1);
+            }
+        }
+
+        public void ForEachAdjacent(Point point, Action<T? /* element */, Point /* point */> function)
+        {
+            if (Has(point.X - 1, point.Y))
+            {
+                function(_Elements[point.Y][point.X - 1], new Point(point.X - 1, point.Y));
+            }
+            if (Has(point.X + 1, point.Y))
+            {
+                function(_Elements[point.Y][point.X + 1], new Point(point.X + 1, point.Y));
+            }
+            if (Has(point.X, point.Y - 1))
+            {
+                function(_Elements[point.Y - 1][point.X], new Point(point.X, point.Y - 1));
+            }
+            if (Has(point.X, point.Y + 1))
+            {
+                function(_Elements[point.Y + 1][point.X], new Point(point.X, point.Y + 1));
             }
         }
 

@@ -9,9 +9,9 @@ namespace _11
             grid.Set(point, value + 1);
             if (value == 9)
             {
-                grid.ForEachAdjacent(point, (adjValue, adjPoint) =>
+                grid.ForEachNeighbor(point, (neighborValue, neighborPoint) =>
                 {
-                    Step(grid, adjValue, adjPoint);
+                    Step(grid, neighborValue, neighborPoint);
                 });
             }
         }

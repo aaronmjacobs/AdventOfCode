@@ -13,6 +13,18 @@ namespace Common
             Y = y;
         }
 
+        public static double Distance(Point a, Point b)
+        {
+            int xDiff = a.X - b.X;
+            int yDiff = a.Y - b.Y;
+            return Math.Sqrt(xDiff * xDiff + yDiff * yDiff);
+        }
+
+        public static int ManhattanDistance(Point a, Point b)
+        {
+            return Math.Abs(a.X - b.X) + Math.Abs(a.Y - b.Y);
+        }
+
         public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return obj is Point p && p.X == X && p.Y == Y;
