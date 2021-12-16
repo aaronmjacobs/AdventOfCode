@@ -20,5 +20,10 @@
 
             return grid;
         }
+
+        public static string HexToBinary(string hex)
+        {
+            return string.Join(string.Empty, hex.Select(c => Convert.ToString(Convert.ToInt32(c.ToString(), 16), 2).PadLeft(4, '0')));
+        }
     }
 }
