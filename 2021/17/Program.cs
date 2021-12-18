@@ -1,31 +1,24 @@
 ﻿using Common;
 
-namespace _16
+namespace _17
 {
     public struct State
     {
-        public long xPos;
-        public long yPos;
+        public Point Position;
+        public Point Velocity;
 
-        public long xVel;
-        public long yVel;
-
-        public State(long xVelocity, long yVelocity)
+        public State(int xVelocity, int yVelocity)
         {
-            xPos = 0;
-            yPos = 0;
-
-            xVel = xVelocity;
-            yVel = yVelocity;
+            Position = new(0, 0);
+            Velocity = new(xVelocity, yVelocity);
         }
 
         public void Step()
         {
-            xPos += xVel;
-            yPos += yVel;
+            Position += Velocity;
 
-            xVel = Math.Max(0, Math.Abs(xVel) - 1) * Math.Sign(xVel);
-            --yVel;
+            Velocity.X = Math.Max(0, Math.Abs(Velocity.X) - 1) * Math.Sign(Velocity.X);
+            --Velocity.Y;
         }
     }
 
@@ -34,71 +27,44 @@ namespace _16
         public static void Main(string[] args)
         {
             List<string> lines = File.ReadLines(@"../../../input.txt").ToList();
-            string blarg = lines[0].Split(": ")[1];
-            string[] halves = blarg.Split(", ");
-            string[] xValues = halves[0].Substring(2).Split("..");
-            string[] yValues = halves[1].Substring(2).Split("..");
-            long xMin = long.Parse(xValues[0]);
-            long xMax = long.Parse(xValues[1]);
-            long yMin = long.Parse(yValues[0]);
-            long yMax = long.Parse(yValues[1]);
+            string[] halves = lines[0].Split(": ")[1].Split(", ");
+            string[] xValues = halves[0][2..].Split("..");
+            string[] yValues = halves[1][2..].Split("..");
+            Point targetMin = new(int.Parse(xValues[0]), int.Parse(yValues[0]));
+            Point targetMax = new(int.Parse(xValues[1]), int.Parse(yValues[1]));
 
-            long xRangeStart = long.MaxValue;
-            long xRangeEnd = long.MinValue;
-            for (long i = 0; i < 1000; ++i)
+            int xVelocityMin = (int)Math.Ceiling((-1.0 + Math.Sqrt(1.0 + 8.0 * targetMin.X)) / 2.0);
+            int xVelocityMax = targetMax.X;
+
+            int yVelocityMin = targetMin.Y;
+            int yVelocityMax = -targetMin.Y + 1;
+
+            int highestY = targetMin.Y * (targetMin.Y + 1) / 2;
+            Console.WriteLine(highestY);
+
+            int numValidVelocities = 0;
+            for (int xVelocity = xVelocityMin; xVelocity <= xVelocityMax; ++xVelocity)
             {
-                long lastX = -1;
-                State state = new(i, 0);
-                while (state.xPos != lastX)
+                for (int yVelocity = yVelocityMin; yVelocity <= yVelocityMax; ++yVelocity)
                 {
-                    if (state.xPos >= xMin)
-                    {
-                        xRangeStart = Math.Min(xRangeStart, i);
-                    }
-                    if (state.xPos <= xMax)
-                    {
-                        xRangeEnd = Math.Max(xRangeEnd, i);
-                    }
-
-                    lastX = state.xPos;
-                    state.Step();
-                }
-            }
-
-            long numValidVelocities = 0;
-            long highestY = long.MinValue;
-            for (long xVel = xRangeStart; xVel <= xRangeEnd; ++xVel)
-            {
-                for (long yVel = -1000; yVel < 1000; ++yVel)
-                {
-                    long highestYThisRun = long.MinValue;
-                    State state = new(xVel, yVel);
-                    for (; ; )
+                    State state = new(xVelocity, yVelocity);
+                    for (;;)
                     {
                         state.Step();
 
-                        if (state.xPos > xMax || state.yPos < yMin)
+                        if (state.Position.X > targetMax.X || state.Position.Y < targetMin.Y)
                         {
-                            //Console.WriteLine("Miss");
                             break;
                         }
 
-                        highestYThisRun = Math.Max(highestYThisRun, state.yPos);
-
-                        //Console.WriteLine($"({state.xPos}, {state.yPos})");
-
-                        if (state.xPos >= xMin && state.xPos <= xMax && state.yPos >= yMin && state.yPos <= yMax)
+                        if (state.Position.X >= targetMin.X && state.Position.X <= targetMax.X && state.Position.Y >= targetMin.Y && state.Position.Y <= targetMax.Y)
                         {
-                            //Console.WriteLine($"{xVel},{yVel}");
-                            highestY = Math.Max(highestY, highestYThisRun);
                             ++numValidVelocities;
                             break;
                         }
                     }
                 }
             }
-
-            Console.WriteLine(highestY);
             Console.WriteLine(numValidVelocities);
 
             Console.ReadLine();
