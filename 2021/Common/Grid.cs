@@ -77,39 +77,39 @@
             }
         }
 
-        public void ForEach(Action<T? /* element */, int /* x */, int /* y */> function)
+        public void ForEach(Action<T? /* element */, int /* x */, int /* y */> function, int inflation = 0)
         {
-            for (int y = 0; y < Height; ++y)
+            for (int y = -inflation; y < Height + inflation; ++y)
             {
-                for (int x = 0; x < Width; ++x)
+                for (int x = -inflation; x < Width + inflation; ++x)
                 {
-                    function(_Elements[y][x], x, y);
+                    function(Get(x, y), x, y);
                 }
             }
         }
 
-        public void ForEach(Action<T? /* element */, Point /* point */> function)
+        public void ForEach(Action<T? /* element */, Point /* point */> function, int inflation = 0)
         {
-            ForEach((element, x, y) => function(element, new Point(x, y)));
+            ForEach((element, x, y) => function(element, new Point(x, y)), inflation);
         }
 
-        public void ForEachNeighbor(int x, int y, Action<T? /* element */, int /* x */, int /* y */> function)
+        public void ForEachNeighbor(int x, int y, Action<T? /* element */, int /* x */, int /* y */> function, bool includeSelf = false, bool unbounded = false)
         {
             for (int nY = y - 1; nY <= y + 1; ++nY)
             {
                 for (int nX = x - 1; nX <= x + 1; ++nX)
                 {
-                    if (!(nY == y && nX == x) && Has(nX, nY))
+                    if ((includeSelf || !(nY == y && nX == x)) && (unbounded || Has(nX, nY)))
                     {
-                        function(_Elements[nY][nX], nX, nY);
+                        function(Get(nX, nY), nX, nY);
                     }
                 }
             }
         }
 
-        public void ForEachNeighbor(Point point, Action<T? /* element */, Point /* point */> function)
+        public void ForEachNeighbor(Point point, Action<T? /* element */, Point /* point */> function, bool includeSelf = false, bool unbounded = false)
         {
-            ForEachNeighbor(point.X, point.Y, (element, x, y) => function(element, new Point(x, y)));
+            ForEachNeighbor(point.X, point.Y, (element, x, y) => function(element, new Point(x, y)), includeSelf, unbounded);
         }
 
         public void ForEachAdjacent(int x, int y, Action<T? /* element */, int /* x */, int /* y */> function)
