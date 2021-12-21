@@ -1,14 +1,48 @@
-﻿namespace _21
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace _21
 {
     public struct State
     {
-        public int Player1Pos;
-        public int Player2Pos;
+        public int Player1Pos = 0;
+        public int Player2Pos = 0;
 
-        public int Player1Score;
-        public int Player2Score;
+        public int Player1Score = 0;
+        public int Player2Score = 0;
 
-        public bool Player1Turn;
+        public bool Player1Turn = true;
+
+        public override bool Equals([NotNullWhen(true)] object? obj)
+        {
+            return obj is State s
+                && s.Player1Pos == Player1Pos
+                && s.Player2Pos == Player2Pos
+                && s.Player1Score == Player1Score
+                && s.Player2Score == Player2Score
+                && s.Player1Turn == Player1Turn;
+        }
+
+        public override int GetHashCode()
+        {
+            // 4 bits for position (0-10)
+            // 5 bits for score (0-21)
+            // 1 bit for turn
+            return Player1Pos << 0
+                | Player2Pos << 4
+                | Player1Score << 8
+                | Player2Score << 13
+                | (Player1Turn ? 1 : 0) << 18;
+        }
+
+        public static bool operator ==(State left, State right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(State left, State right)
+        {
+            return !(left == right);
+        }
     }
 
     public struct WinCounts
@@ -35,123 +69,107 @@
 
     public class Program
     {
-        public static Dictionary<State, WinCounts> StateMap = new();
-        public static ulong[] RollCounts = new ulong[7];
-
-        public static void ComputeRollCounts()
+        public static ulong[] ComputeRollCounts()
         {
+            ulong[] rollCounts = new ulong[7];
+
             for (ulong first = 1; first <= 3; ++first)
             {
                 for (ulong second = 1; second <= 3; ++second)
                 {
                     for (ulong third = 1; third <= 3; ++third)
                     {
-                        ++RollCounts[first + second + third - 3];
+                        ++rollCounts[first + second + third - 3];
                     }
                 }
             }
+
+            return rollCounts;
         }
 
-        public static void Step(State state, ref WinCounts winCounts)
+        public static void Step(State state, Dictionary<State, WinCounts> stateMap, ulong[] rollCounts, ref WinCounts winCounts)
         {
-            if (StateMap.TryGetValue(state, out WinCounts memoizedWinCounts))
+            if (stateMap.TryGetValue(state, out WinCounts memoizedWinCounts))
             {
                 winCounts += memoizedWinCounts;
             }
+            else if (state.Player1Score >= 21)
+            {
+                ++winCounts.Player1;
+            }
+            else if (state.Player2Score >= 21)
+            {
+                ++winCounts.Player2;
+            }
             else
             {
                 WinCounts localWinCounts = new();
-                Roll(state, ref localWinCounts);
+                for (int i = 0; i < rollCounts.Length; ++i)
+                {
+                    int value = i + 3;
 
-                StateMap[state] = localWinCounts;
+                    State rollState = state;
+                    if (rollState.Player1Turn)
+                    {
+                        rollState.Player1Pos = (rollState.Player1Pos + value - 1) % 10 + 1;
+                        rollState.Player1Score += rollState.Player1Pos;
+                    }
+                    else
+                    {
+                        rollState.Player2Pos = (rollState.Player2Pos + value - 1) % 10 + 1;
+                        rollState.Player2Score += rollState.Player2Pos;
+                    }
+                    rollState.Player1Turn = !rollState.Player1Turn;
+
+                    WinCounts rollWinCounts = new();
+                    Step(rollState, stateMap, rollCounts, ref rollWinCounts);
+
+                    localWinCounts += rollWinCounts * rollCounts[i];
+                }
+
+                stateMap[state] = localWinCounts;
                 winCounts += localWinCounts;
             }
-        }
-
-        public static void Roll(State state, ref WinCounts winCounts)
-        {
-            for (int i = 0; i < RollCounts.Length; ++i)
-            {
-                WinCounts localWinCounts = new();
-                Update(state, i + 3, ref localWinCounts);
-
-                winCounts += localWinCounts * RollCounts[i];
-            }
-        }
-
-        public static void Update(State state, int value, ref WinCounts winCounts)
-        {
-            if (state.Player1Turn)
-            {
-                state.Player1Pos = (state.Player1Pos + value - 1) % 10 + 1;
-                state.Player1Score += state.Player1Pos;
-                if (state.Player1Score >= 21)
-                {
-                    ++winCounts.Player1;
-                    return;
-                }
-            }
-            else
-            {
-                state.Player2Pos = (state.Player2Pos + value - 1) % 10 + 1;
-                state.Player2Score += state.Player2Pos;
-                if (state.Player2Score >= 21)
-                {
-                    ++winCounts.Player2;
-                    return;
-                }
-            }
-
-            state.Player1Turn = !state.Player1Turn;
-            Step(state, ref winCounts);
         }
 
         public static void Main(string[] args)
         {
             List<string> lines = File.ReadLines(@"../../../input.txt").ToList();
 
-            int player1Pos = int.Parse(lines[0].Split(": ")[1]);
-            int player2Pos = int.Parse(lines[1].Split(": ")[1]);
+            State initialState = new();
+            initialState.Player1Pos = int.Parse(lines[0].Split(": ")[1]);
+            initialState.Player2Pos = int.Parse(lines[1].Split(": ")[1]);
 
-            long player1Score = 0;
-            long player2Score = 0;
+            State part1State = initialState;
             int die = 1;
             int rollCount = 0;
             while (true)
             {
-                player1Pos = (player1Pos + die + die + 1 + die + 2 - 1) % 10 + 1;
-                die = (die + 3 - 1) % 100 + 1;
+                part1State.Player1Pos = (part1State.Player1Pos + die * 3 + 2) % 10 + 1;
+                die = (die + 2) % 100 + 1;
                 rollCount += 3;
-                player1Score += player1Pos;
-                if (player1Score >= 1000)
+                part1State.Player1Score += part1State.Player1Pos;
+                if (part1State.Player1Score >= 1000)
                 {
                     break;
                 }
 
-                player2Pos = (player2Pos + die + die + 1 + die + 2 - 1) % 10 + 1;
-                die = (die + 3 - 1) % 100 + 1;
+                part1State.Player2Pos = (part1State.Player2Pos + die * 3 + 2) % 10 + 1;
+                die = (die + 2) % 100 + 1;
                 rollCount += 3;
-                player2Score += player2Pos;
-                if (player2Score >= 1000)
+                part1State.Player2Score += part1State.Player2Pos;
+                if (part1State.Player2Score >= 1000)
                 {
                     break;
                 }
             }
+            Console.WriteLine(Math.Min(part1State.Player1Score, part1State.Player2Score) * rollCount);
 
-            Console.WriteLine(Math.Min(player1Score, player2Score) * rollCount);
-
-            ComputeRollCounts();
-
-            State state;
-            state.Player1Pos = int.Parse(lines[0].Split(": ")[1]);
-            state.Player2Pos = int.Parse(lines[1].Split(": ")[1]);
-            state.Player1Score = 0;
-            state.Player2Score = 0;
-            state.Player1Turn = true;
-
+            State part2State = initialState;
+            Dictionary<State, WinCounts> stateMap = new();
+            ulong[] rollCounts = ComputeRollCounts();
             WinCounts winCounts = new();
-            Step(state, ref winCounts);
-
+            Step(part2State, stateMap, rollCounts, ref winCounts);
             Console.WriteLine(Math.Max(winCounts.Player1, winCounts.Player2));
 
             Console.ReadLine();
