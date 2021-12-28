@@ -21,6 +21,19 @@
             get { return _Elements.Count; }
         }
 
+        public Grid<T> Clone()
+        {
+            Grid<T> clone = new(_DefaultElement);
+
+            clone._Elements = new(_Elements);
+            for (int y = 0; y < Height; ++y)
+            {
+                clone._Elements[y] = new(_Elements[y]);
+            }
+
+            return clone;
+        }
+
         public bool Has(int x, int y)
         {
             return x >= 0 && x < Width && y >= 0 && y < Height;
